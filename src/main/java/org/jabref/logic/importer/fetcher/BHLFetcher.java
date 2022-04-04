@@ -11,6 +11,7 @@ import org.jabref.logic.importer.SearchBasedParserFetcher;
 import org.jabref.logic.importer.fetcher.transformers.DefaultQueryTransformer;
 import org.jabref.logic.util.OS;
 import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.field.Field;
 import org.jabref.model.entry.field.StandardField;
 import org.jabref.model.entry.types.StandardEntryType;
 import org.slf4j.Logger;
@@ -24,7 +25,9 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +44,14 @@ public class BHLFetcher implements SearchBasedParserFetcher {
 
     public static BibEntry parseBibJSONtoBibtex(JSONObject bibJsonEntry) {
         BibEntry entry = new BibEntry(StandardEntryType.Article);
+        Map<String, Field> directKeys = new HashMap<String, Field>();
+
+        directKeys.put("Date", StandardField.YEAR);
+        directKeys.put("Doi", StandardField.DOI);
+        directKeys.put("PublisherName", StandardField.PUBLISHER);
+        directKeys.put("Title", StandardField.TITLE);
+        directKeys.put("PartUrl", StandardField.URL);
+        directKeys.put("Volume", StandardField.VOLUME);
 
         // Authors
         if (bibJsonEntry.has("Authors")) {
@@ -58,35 +69,12 @@ public class BHLFetcher implements SearchBasedParserFetcher {
             LOGGER.info("No author found.");
         }
 
-        // Year
-        if (bibJsonEntry.has("Date")) {
-            entry.setField(StandardField.YEAR, bibJsonEntry.getString("Date"));
-        }
-
-        // DOI
-        if (bibJsonEntry.has("Doi")) {
-            entry.setField(StandardField.DOI, bibJsonEntry.getString("Doi"));
-        }
-
-        // Publisher
-        if (bibJsonEntry.has("PublisherName")) {
-            entry.setField(StandardField.PUBLISHER, bibJsonEntry.getString("PublisherName"));
-        }
-
-        // Title
-        if (bibJsonEntry.has("Title")) {
-            entry.setField(StandardField.TITLE, bibJsonEntry.getString("Title"));
-        }
-
-        // URL
-        if (bibJsonEntry.has("PartUrl")) {
-            entry.setField(StandardField.URL, bibJsonEntry.getString("PartUrl"));
-        }
-
-        // Volume
-        if (bibJsonEntry.has("Volume")) {
-            entry.setField(StandardField.VOLUME, bibJsonEntry.getString("Volume"));
-        }
+        // Keys that are already in the first level of the JSON
+        directKeys.forEach((key, value) -> {
+            if (bibJsonEntry.has(key)) {
+                entry.setField(value, bibJsonEntry.getString(key));
+            }
+        });
 
         return entry;
     }
